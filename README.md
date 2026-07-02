@@ -1,22 +1,51 @@
-# 2022-SuwonUniv_Dacon
-## Stage 1 Siksu 
-### [Private 1위] XGBoost model
+# 수원대학교 DACON 구내식당 식수 예측
 
-![image](https://user-images.githubusercontent.com/113090595/227752379-ae6b239e-71b4-46c3-9192-b8fc9dfc3e95.png)
-![image](https://user-images.githubusercontent.com/113090595/227752508-67d74566-0e5d-439d-b160-279a981723bd.png)
+2022 수원대학교 DACON 구내식당 식사 인원 예측 대회 프로젝트입니다.
 
+날짜별 근무 인원, 휴가자 수, 출장자 수, 재택근무자 수, 초과근무 승인 건수 등을 이용해 중식계와 석식계를 예측했습니다.
 
+## 성과
 
-국이랑 메인반찬만 맛있으면 무조건 먹을 것이라고 가정 + 마지막 수업시간에 호불호 음식에 관해 시각화 진행\
-ex) 파인애플볶음밥 같은 호불호가 갈릴 음식에서 차이를 보였음.
+- Private 리더보드 1위
+- XGBoost 회귀 모델 사용
+- 중식계와 석식계를 각각 별도 모델로 예측
 
-![image](https://user-images.githubusercontent.com/113090595/227752635-50dfa84c-e2d3-40f2-869f-26ebfaad6e7d.png)\
-![image](https://user-images.githubusercontent.com/113090595/227752621-ac954cfc-a7d1-4fe7-9c75-4fd69167ebcf.png)
+![Private leaderboard 1위](images/leaderboard.png)
 
-![image](https://user-images.githubusercontent.com/113090595/227752656-0b5ad46f-1b88-49a3-8b4d-37bf6dc99938.png)
+## 모델링
 
-![image](https://user-images.githubusercontent.com/113090595/227752595-80cbc706-824e-481d-9ce3-2e23c4c3b286.png)\
+최종 모델은 메뉴 텍스트보다 근무 인원과 날짜 변수에 집중했습니다. 메뉴도 식수 인원에 영향을 줄 수 있지만, 기본적으로 그날 회사에 실제로 남아 있는 인원과 요일 패턴의 영향이 크다고 판단했습니다.
 
-![image](https://user-images.githubusercontent.com/113090595/227752709-854aead5-cd01-48e0-8bb7-7eba9f679317.png)
+사용한 주요 변수는 아래와 같습니다.
 
-![image](https://user-images.githubusercontent.com/113090595/227752728-0abbdb63-2a75-4d47-8eb8-e323898f3463.png)
+- `요일`: 월-금 요일 정보
+- `월`, `일`: 날짜에서 추출한 월/일
+- `현재원`: `본사정원수 - 본사휴가자수 - 본사출장자수 - 현본사소속재택근무자수`
+- `본사휴가자수`, `본사출장자수`, `본사시간외근무명령서승인건수`, `현본사소속재택근무자수`
+
+석식은 운영하지 않은 날이 포함되어 있어 `석식계`가 0인 행은 학습에서 제외했습니다.
+
+추가로 메뉴 중 국과 메인 반찬이 식수 인원에 영향을 줄 수 있다고 보고, 일부 호불호가 갈리는 메뉴를 따로 확인했습니다. 다만 최종 제출 모델은 근무 인원과 날짜 변수 중심으로 구성했습니다.
+
+## 코드 구성
+
+주요 로직은 아래 파일에 나누어 두었습니다.
+
+- `src/siksu/features.py`: 요일 인코딩, 날짜 피처, 현재원 계산
+- `src/siksu/modeling.py`: XGBoost 회귀 모델 학습
+- `src/siksu/pipeline.py`: 중식/석식 예측과 제출 파일 생성 흐름
+- `notebooks/01_modeling.ipynb`: 전체 모델링 흐름 요약
+- `notebooks/original`: 기존 노트북 원본 보관
+- `docs/original_readme.md`: 기존 README 원문 보관
+
+## 시각화
+
+일별 중식계와 석식계를 먼저 확인했고, 석식계는 0에 가까운 값이 반복적으로 나타나는 점을 별도로 처리했습니다.
+
+|![일별 중식계](images/daily_lunch_count.png)|![일별 석식계](images/daily_dinner_count.png)|
+| :-- | :-- |
+|||
+
+근무 인원 관련 변수와 식수 인원의 상관관계도 함께 확인했습니다.
+
+![상관관계 히트맵](images/correlation_heatmap.png)
